@@ -1,7 +1,7 @@
 /*
  * TeleStax, Open Source Cloud Communications
  * Copyright 2011-2016, Telestax Inc and individual contributors
- * by the @authors tag. 
+ * by the @authors tag.
  *
  * This is free software; you can redistribute it and/or modify it
  * under the terms of the GNU Lesser General Public License as
@@ -19,32 +19,21 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.mobicents.media.control.mgcp.pkg;
-
-import org.mobicents.media.control.mgcp.exception.MgcpSignalException;
+package org.mobicents.media.control.mgcp.exception;
 
 /**
- * @author Henrique Rosa (henrique.rosa@telestax.com)
- *
+ * @author guilherme.jansen@telestax.com
  */
-public interface MgcpSignal extends MgcpEventSubject {
+public class MgcpSignalException extends MgcpException {
 
-    /**
-     * Executes the signal.
-     */
-    void execute() throws MgcpSignalException;
+    private static final long serialVersionUID = 4956956700370957908L;
 
-    /**
-     * Cancels the executing signal.<br>
-     * No action is taken if signal is not executing.
-     */
-    void cancel();
+    public MgcpSignalException(String message, Throwable cause) {
+        super(message, cause);
+    }
 
-    /**
-     * Gets whether the signal is currently executing.
-     * 
-     * @return <code>true</code> if executing; otherwise returns <code>false</code>
-     */
-    boolean isExecuting();
+    public MgcpSignalException(String message) {
+        super(message);
+    }
 
 }

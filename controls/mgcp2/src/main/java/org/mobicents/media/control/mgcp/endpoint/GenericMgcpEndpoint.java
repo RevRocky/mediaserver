@@ -39,6 +39,8 @@ import org.mobicents.media.control.mgcp.connection.MgcpRemoteConnection;
 import org.mobicents.media.control.mgcp.exception.MgcpCallNotFoundException;
 import org.mobicents.media.control.mgcp.exception.MgcpConnectionException;
 import org.mobicents.media.control.mgcp.exception.MgcpConnectionNotFound;
+import org.mobicents.media.control.mgcp.exception.MgcpException;
+import org.mobicents.media.control.mgcp.exception.MgcpSignalException;
 import org.mobicents.media.control.mgcp.listener.MgcpCallListener;
 import org.mobicents.media.control.mgcp.listener.MgcpConnectionListener;
 import org.mobicents.media.control.mgcp.message.MessageDirection;
@@ -49,6 +51,11 @@ import org.mobicents.media.control.mgcp.message.MgcpRequest;
 import org.mobicents.media.control.mgcp.message.MgcpRequestType;
 import org.mobicents.media.control.mgcp.pkg.MgcpEvent;
 import org.mobicents.media.control.mgcp.pkg.MgcpSignal;
+import org.mobicents.media.control.mgcp.pkg.au.AudioSignalType;
+import org.mobicents.media.control.mgcp.pkg.au.EndSignal;
+import org.mobicents.media.control.mgcp.pkg.au.PlayAnnouncement;
+import org.mobicents.media.control.mgcp.pkg.au.pc.PlayCollect;
+import org.mobicents.media.control.mgcp.pkg.au.pr.PlayRecord;
 
 /**
  * Abstract representation of an MGCP Endpoint that groups connections by calls.
@@ -302,20 +309,26 @@ public class GenericMgcpEndpoint implements MgcpEndpoint, MgcpCallListener, Mgcp
     }
 
     @Override
-    public void requestNotification(NotificationRequest request) {
-        if (this.signal != null) {
-            // Cancel current signal.
-            // Upon cancellation, the signal will send an event that the endpoint will use to send NTFY to the call agent
-            // registered with the event.
-            this.signal.cancel();
-        }
-
+    public void requestNotification(NotificationRequest request) throws MgcpSignalException {
         // Set new notification request and start executing requested signals (if any)
         this.notificationRequest = request;
-        this.signal = this.notificationRequest.pollSignal();
+        MgcpSignal signal = this.notificationRequest.peekSignal();
         if (signal != null) {
-            this.signal.observe(this);
-            this.signal.execute();
+            if (signal.getClass().equals(EndSignal.class)) {
+                // Preserve current signal
+                ((EndSignal) signal).setEndpoint(this);
+                signal.observe(this);
+                signal.execute();
+                this.signal = this.notificationRequest.pollSignal();
+            } else if (this.signal != null && this.signal.isExecuting()) {
+                throw new MgcpSignalException(this.signal.getClass().getSimpleName() + " still executing");
+            } else {
+                this.signal = this.notificationRequest.pollSignal();
+                this.signal.observe(this);
+                this.signal.execute();
+            }
+        } else {
+            this.signal = this.notificationRequest.pollSignal();
         }
     }
 
@@ -408,7 +421,11 @@ public class GenericMgcpEndpoint implements MgcpEndpoint, MgcpCallListener, Mgcp
         // Execute next event in pipeline
         this.signal = this.notificationRequest.pollSignal();
         if (this.signal != null) {
-            this.signal.execute();
+            try {
+                this.signal.execute();
+            } catch (MgcpSignalException e) {
+                log.error(e);
+            }
         } else {
             // No further events are scheduled. Cleanup notification request.
             this.notificationRequest = null;
@@ -432,6 +449,37 @@ public class GenericMgcpEndpoint implements MgcpEndpoint, MgcpCallListener, Mgcp
             MgcpEndpointObserver observer = iterator.next();
             observer.onEndpointStateChanged(this, state);
         }
+    }
+
+    @Override
+    public void cancelSignal(AudioSignalType signalType) throws MgcpSignalException {
+        if (this.signal != null) {
+            switch (signalType) {
+                case PLAY_ANNOUNCEMENT:
+                    if (!this.signal.getClass().equals(PlayAnnouncement.class)) {
+                        throw new MgcpSignalException("Signal types are not compatible");
+                    }
+                    break;
+                case PLAY_COLLECT:
+                    if (!this.signal.getClass().equals(PlayCollect.class)) {
+                        throw new MgcpSignalException("Signal types are not compatible");
+                    }
+                    break;
+                case PLAY_RECORD:
+                    if (!this.signal.getClass().equals(PlayRecord.class)) {
+                        throw new MgcpSignalException("Signal types are not compatible");
+                    }
+                    break;
+                default:
+                    throw new MgcpSignalException("Unknown signal type");
+            }
+            if (this.signal.isExecuting()) {
+                this.signal.cancel();
+            }
+        } else {
+            throw new MgcpSignalException("No signal to be cancelled in the endpoint");
+        }
+
     }
 
 }

@@ -28,6 +28,7 @@ import org.mobicents.media.control.mgcp.command.param.NotifiedEntity;
 import org.mobicents.media.control.mgcp.endpoint.MgcpEndpoint;
 import org.mobicents.media.control.mgcp.endpoint.MgcpEndpointManager;
 import org.mobicents.media.control.mgcp.exception.MgcpParseException;
+import org.mobicents.media.control.mgcp.exception.MgcpSignalException;
 import org.mobicents.media.control.mgcp.message.MgcpParameterType;
 import org.mobicents.media.control.mgcp.message.MgcpResponseCode;
 import org.mobicents.media.control.mgcp.pkg.MgcpRequestedEvent;
@@ -164,7 +165,11 @@ public class RequestNotificationCommand extends AbstractMgcpCommand {
         // }
 
         // Request notification to endpoint
-        endpoint.requestNotification(rqnt);
+        try {
+            endpoint.requestNotification(rqnt);
+        } catch (MgcpSignalException e) {
+            throw new MgcpCommandException(MgcpResponseCode.PROTOCOL_ERROR);
+        }
     }
 
     private MgcpCommandResult respond(RqntContext context) {

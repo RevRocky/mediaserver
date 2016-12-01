@@ -21,6 +21,12 @@
 
 package org.mobicents.media.control.mgcp.pkg.au;
 
+import java.util.Map;
+
+import org.apache.log4j.Logger;
+import org.mobicents.media.control.mgcp.endpoint.MgcpEndpoint;
+import org.mobicents.media.control.mgcp.exception.MgcpException;
+import org.mobicents.media.control.mgcp.exception.MgcpSignalException;
 import org.mobicents.media.control.mgcp.pkg.AbstractMgcpSignal;
 import org.mobicents.media.control.mgcp.pkg.SignalType;
 
@@ -38,19 +44,37 @@ import org.mobicents.media.control.mgcp.pkg.SignalType;
  */
 public class EndSignal extends AbstractMgcpSignal {
 
-    public EndSignal() {
+    private static final Logger log = Logger.getLogger(EndSignal.class);
+    private MgcpEndpoint mgcpEndpoint;
+    private final Map<String, String> parameters;
+
+    public EndSignal(Map<String, String> parameters) {
         super(AudioPackage.PACKAGE_NAME, "es", SignalType.BRIEF);
+        this.parameters = parameters;
+    }
+
+    public void setEndpoint(MgcpEndpoint endpoint) {
+        this.mgcpEndpoint = endpoint;
     }
 
     @Override
     protected boolean isParameterSupported(String name) {
+        if (name != null && name.equals("sg")) {
+            return true;
+        }
         return false;
     }
 
     @Override
-    public void execute() {
-        // TODO Auto-generated method stub
-
+    public void execute() throws MgcpSignalException {
+        AudioSignalType signalType = AudioSignalType.fromSymbol(parameters.get("sg"));
+        try {
+            log.info("Cancelling signal " + getParameter("sg"));
+            this.mgcpEndpoint.cancelSignal(signalType);
+        } catch (MgcpSignalException e) {
+            log.error(e.getMessage());
+            throw e;
+        }
     }
 
     @Override

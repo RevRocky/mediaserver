@@ -26,6 +26,7 @@ import java.util.Map;
 import org.mobicents.media.control.mgcp.endpoint.MediaGroup;
 import org.mobicents.media.control.mgcp.pkg.au.AudioPackage;
 import org.mobicents.media.control.mgcp.pkg.au.AudioSignalType;
+import org.mobicents.media.control.mgcp.pkg.au.EndSignal;
 import org.mobicents.media.control.mgcp.pkg.au.PlayAnnouncement;
 import org.mobicents.media.control.mgcp.pkg.au.pc.PlayCollect;
 import org.mobicents.media.control.mgcp.pkg.au.pr.PlayRecord;
@@ -90,6 +91,9 @@ public class MgcpSignalProvider {
 
             case PLAY_RECORD:
                 return new PlayRecord(mediaGroup.getPlayer(), mediaGroup.getDetector(), mediaGroup.getRecorder(), parameters);
+
+            case END_SIGNAL:
+                return new EndSignal(parameters);
 
             default:
                 throw new IllegalArgumentException("Unsupported audio signal: " + signal);

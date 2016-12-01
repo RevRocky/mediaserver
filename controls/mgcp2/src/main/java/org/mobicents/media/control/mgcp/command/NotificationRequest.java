@@ -78,6 +78,10 @@ public class NotificationRequest {
         return this.requestedSignals.poll();
     }
 
+    public MgcpSignal peekSignal() {
+        return this.requestedSignals.peek();
+    }
+
     public int countSignals() {
         return this.requestedSignals.size();
     }

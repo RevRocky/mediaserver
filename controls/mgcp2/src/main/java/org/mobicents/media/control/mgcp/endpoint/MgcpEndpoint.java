@@ -27,8 +27,10 @@ import org.mobicents.media.control.mgcp.command.NotificationRequest;
 import org.mobicents.media.control.mgcp.connection.MgcpConnection;
 import org.mobicents.media.control.mgcp.exception.MgcpCallNotFoundException;
 import org.mobicents.media.control.mgcp.exception.MgcpConnectionNotFound;
+import org.mobicents.media.control.mgcp.exception.MgcpSignalException;
 import org.mobicents.media.control.mgcp.message.MgcpMessageSubject;
 import org.mobicents.media.control.mgcp.pkg.MgcpEventObserver;
+import org.mobicents.media.control.mgcp.pkg.au.AudioSignalType;
 
 /**
  * An Endpoint is a logical representation of a physical entity, such as an analog phone or a channel in a trunk.
@@ -99,7 +101,7 @@ public interface MgcpEndpoint extends MgcpEndpointSubject, MgcpMessageSubject, M
      * 
      * @param request The notification request.
      */
-    void requestNotification(NotificationRequest request);
+    void requestNotification(NotificationRequest request) throws MgcpSignalException;
 
     /**
      * Gets the media group that holds media components of the endpoint.
@@ -107,4 +109,13 @@ public interface MgcpEndpoint extends MgcpEndpointSubject, MgcpMessageSubject, M
      * @return The media group.
      */
     MediaGroup getMediaGroup();
+
+    /**
+     * Cancel a MgcpSignal with the informed signalType in execution by the endpoint
+     *
+     * @param signalType The AudioSignalType of the MgcpSignal
+     * @throws MgcpSignalException When there is no signal in execution by the endpoint or the signal in execution has a
+     *         different AudioSignalType
+     */
+    void cancelSignal(AudioSignalType signalType) throws MgcpSignalException;
 }
